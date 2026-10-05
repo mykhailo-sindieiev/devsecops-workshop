@@ -1,0 +1,10 @@
+.DS_Store
+**/.terraform
+**/.vscode
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+Chart.lock
+**/charts/*
+node_modules/*
