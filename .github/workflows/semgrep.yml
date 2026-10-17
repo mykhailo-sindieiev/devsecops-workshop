@@ -1,0 +1,86 @@
+name: Semgrep
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  semgrep:
+    name: SAST scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # only used by the SARIF upload on main
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      # On a PR the author can still fix things, so findings block the merge.
+      # --error makes Semgrep exit non-zero when a finding is reported.
+      - name: Scan (blocking)
+        if: github.event_name == 'pull_request'
+        run: |
+          semgrep scan \
+            --config p/default \
+            --config p/dockerfile \
+            --severity ERROR \
+            --metrics off \
+            --error
+
+      # On main the code is already merged, so report instead of failing.
+      # One scan emits both formats: SARIF for the Security tab, Semgrep JSON
+      # for DefectDojo (its Semgrep parser does not read SARIF).
+      - name: Scan (report only)
+        if: github.event_name == 'push'
+        run: |
+          semgrep scan \
+            --config p/default \
+            --config p/dockerfile \
+            --metrics off \
+            --sarif-output=semgrep.sarif \
+            --json-output=semgrep.json
+
+      - name: Upload SARIF to code scanning
+        if: github.event_name == 'push'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+
+      # reimport-scan updates the existing test in place and closes findings
+      # that no longer appear, instead of stacking a new test every run.
+      - name: Upload results to DefectDojo
+        if: github.event_name == 'push'
+        env:
+          DD_URL: ${{ secrets.DEFECTDOJO_URL }}
+          DD_TOKEN: ${{ secrets.DEFECTDOJO_TOKEN }}
+          DD_PRODUCT: devsecops-workshop
+          DD_ENGAGEMENT: main-branch-sast
+          COMMIT: ${{ github.sha }}
+          BRANCH: ${{ github.ref_name }}
+          BUILD_ID: ${{ github.run_id }}
+        run: |
+          curl -sS --fail-with-body \
+            -X POST "${DD_URL%/}/api/v2/reimport-scan/" \
+            -H "Authorization: Token ${DD_TOKEN}" \
+            -F "scan_type=Semgrep JSON Report" \
+            -F "file=@semgrep.json" \
+            -F "product_name=${DD_PRODUCT}" \
+            -F "engagement_name=${DD_ENGAGEMENT}" \
+            -F "auto_create_context=true" \
+            -F "close_old_findings=true" \
+            -F "active=true" \
+            -F "verified=false" \
+            -F "branch_tag=${BRANCH}" \
+            -F "commit_hash=${COMMIT}" \
+            -F "build_id=${BUILD_ID}"
