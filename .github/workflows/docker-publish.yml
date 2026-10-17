@@ -3,11 +3,17 @@ name: Build and Push Images
 on:
   push:
     branches: [main]
+    tags: ['*']
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env:
+      NAMESPACE: ${{ vars.DOCKERHUB_USERNAME }}
+      # Git tag push -> use the tag name; anything else -> latest.
+      IMAGE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
 
     steps:
       - name: Checkout
@@ -21,10 +27,10 @@ jobs:
 
       - name: Build and push api
         run: |
-          docker build -t ${{ vars.DOCKERHUB_USERNAME }}/devsecops-workshop-api:latest ./api
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/devsecops-workshop-api:latest
+          docker build -t "$NAMESPACE/devsecops-workshop-api:$IMAGE_TAG" ./api
+          docker push "$NAMESPACE/devsecops-workshop-api:$IMAGE_TAG"
 
       - name: Build and push frontend
         run: |
-          docker build -t ${{ vars.DOCKERHUB_USERNAME }}/devsecops-workshop-frontend:latest ./frontend
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/devsecops-workshop-frontend:latest
+          docker build -t "$NAMESPACE/devsecops-workshop-frontend:$IMAGE_TAG" ./frontend
+          docker push "$NAMESPACE/devsecops-workshop-frontend:$IMAGE_TAG"
