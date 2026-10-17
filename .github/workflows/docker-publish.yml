@@ -52,6 +52,15 @@ jobs:
           trivy convert --format table trivy-api.json
           trivy convert --format sarif --output trivy-api.sarif trivy-api.json
 
+      # Image-level SBOM: includes the Alpine OS packages, which a
+      # source-manifest SBOM (cdxgen) does not see.
+      - name: Generate api image SBOM
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/devsecops-workshop-api:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+          format: cyclonedx
+          output: sbom-api-image.json
+
       - name: Push api
         run: docker push "$NAMESPACE/devsecops-workshop-api:$IMAGE_TAG"
 
@@ -70,6 +79,13 @@ jobs:
             "$NAMESPACE/devsecops-workshop-frontend:$IMAGE_TAG"
           trivy convert --format table trivy-frontend.json
           trivy convert --format sarif --output trivy-frontend.sarif trivy-frontend.json
+
+      - name: Generate frontend image SBOM
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/devsecops-workshop-frontend:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+          format: cyclonedx
+          output: sbom-frontend-image.json
 
       - name: Push frontend
         run: docker push "$NAMESPACE/devsecops-workshop-frontend:$IMAGE_TAG"
@@ -125,3 +141,9 @@ jobs:
 
           upload trivy-api.json trivy-api
           upload trivy-frontend.json trivy-frontend
+
+      - name: Upload image SBOMs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-sbom
+          path: sbom-*-image.json
