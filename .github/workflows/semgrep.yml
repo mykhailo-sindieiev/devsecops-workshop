@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write  # only used by the SARIF upload on main
+      security-events: write # only used by the SARIF upload on main
 
     steps:
       - name: Checkout
@@ -21,7 +21,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install Semgrep
         run: pip install semgrep
@@ -39,8 +39,7 @@ jobs:
             --error
 
       # On main the code is already merged, so report instead of failing.
-      # One scan emits both formats: SARIF for the Security tab, Semgrep JSON
-      # for DefectDojo (its Semgrep parser does not read SARIF).
+      # One scan emits both formats: SARIF for the Security tab, Semgrep JSON for DefectDojo
       - name: Scan (report only)
         if: github.event_name == 'push'
         run: |
