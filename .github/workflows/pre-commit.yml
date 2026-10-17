@@ -1,0 +1,26 @@
+name: Pre-commit
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  pre-commit:
+    name: Run pre-commit hooks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # Runs `pre-commit run --all-files` and prints the diff for any hook
+      # that rewrites a file, so the author can apply it locally.
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
