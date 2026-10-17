@@ -1,0 +1,59 @@
+name: SBOM
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sbom:
+    name: Generate and upload SBOM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The two components have different ecosystems, so they get separate
+      # SBOMs and separate Dependency-Track projects.
+      - name: Generate SBOMs
+        run: |
+          npx -y @cyclonedx/cdxgen@12.8.6 -t python -o sbom-api.json ./api
+          npx -y @cyclonedx/cdxgen@12.8.6 -t javascript -o sbom-frontend.json ./frontend
+
+      # Keep a copy regardless of whether Dependency-Track is reachable.
+      - name: Upload SBOMs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom-*.json
+
+      # Uploads into pre-existing projects, addressed by UUID. No autoCreate:
+      # an unknown UUID fails the step rather than silently making a project.
+      - name: Upload SBOMs to Dependency-Track
+        env:
+          DT_URL: ${{ secrets.DEPENDENCYTRACK_URL }}
+          DT_KEY: ${{ secrets.DEPENDENCYTRACK_API_KEY }}
+          DT_PROJECT_API: ${{ vars.DT_PROJECT_API }}
+          DT_PROJECT_FRONTEND: ${{ vars.DT_PROJECT_FRONTEND }}
+        run: |
+          upload() {
+            local file="$1" project="$2"
+            echo "Uploading ${file} -> project ${project}"
+            curl -sS --fail-with-body \
+              -X POST "${DT_URL%/}/api/v1/bom" \
+              -H "X-Api-Key: ${DT_KEY}" \
+              -F "project=${project}" \
+              -F "bom=@${file}"
+            echo
+          }
+
+          upload sbom-api.json "$DT_PROJECT_API"
+          upload sbom-frontend.json "$DT_PROJECT_FRONTEND"
