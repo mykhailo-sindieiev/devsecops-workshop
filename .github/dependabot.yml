@@ -1,6 +1,6 @@
 version: 2
 
-# Days are staggered so the five ecosystems don't all open PRs at once.
+# All ecosystems run Friday 13:00 Europe/Madrid.
 updates:
   # ----- application dependencies -----
 
@@ -8,14 +8,18 @@ updates:
     directory: /api
     schedule:
       interval: weekly
-      day: monday
+      day: friday
+      time: "13:00"
+      timezone: Europe/Madrid
     open-pull-requests-limit: 5
 
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
-      day: tuesday
+      day: friday
+      time: "13:00"
+      timezone: Europe/Madrid
     open-pull-requests-limit: 5
 
   # ----- base images -----
@@ -26,14 +30,18 @@ updates:
     directory: /api
     schedule:
       interval: weekly
-      day: wednesday
+      day: friday
+      time: "13:00"
+      timezone: Europe/Madrid
     open-pull-requests-limit: 3
 
   - package-ecosystem: docker
     directory: /frontend
     schedule:
       interval: weekly
-      day: wednesday
+      day: friday
+      time: "13:00"
+      timezone: Europe/Madrid
     open-pull-requests-limit: 3
 
   # ----- CI -----
@@ -44,5 +52,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
-      day: thursday
+      day: friday
+      time: "13:00"
+      timezone: Europe/Madrid
     open-pull-requests-limit: 5
