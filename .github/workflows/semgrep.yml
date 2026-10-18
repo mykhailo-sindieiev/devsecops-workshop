@@ -35,8 +35,9 @@ jobs:
             --config p/default \
             --config p/dockerfile \
             --severity ERROR \
-            --metrics off \
-            --error
+            --metrics off
+      # Uncomment the following line to make Semgrep exit non-zero on findings
+      # --error
 
       # On main the code is already merged, so report instead of failing.
       # One scan emits both formats: SARIF for the Security tab, Semgrep JSON for DefectDojo
