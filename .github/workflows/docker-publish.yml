@@ -147,3 +147,27 @@ jobs:
         with:
           name: image-sbom
           path: sbom-*-image.json
+
+      # Separate projects from the cdxgen source SBOMs in sbom.yml. A BOM
+      # upload replaces a project's component list, so image and source SBOMs
+      # must not share a project or they overwrite each other.
+      - name: Publish image SBOMs to Dependency-Track
+        env:
+          DT_URL: ${{ secrets.DEPENDENCYTRACK_URL }}
+          DT_KEY: ${{ secrets.DEPENDENCYTRACK_API_KEY }}
+          DT_PROJECT_API_IMAGE: ${{ vars.DT_PROJECT_API_IMAGE }}
+          DT_PROJECT_FRONTEND_IMAGE: ${{ vars.DT_PROJECT_FRONTEND_IMAGE }}
+        run: |
+          upload() {
+            local file="$1" project="$2"
+            echo "Uploading ${file} -> project ${project}"
+            curl -sS --fail-with-body \
+              -X POST "${DT_URL%/}/api/v1/bom" \
+              -H "X-Api-Key: ${DT_KEY}" \
+              -F "project=${project}" \
+              -F "bom=@${file}"
+            echo
+          }
+
+          upload sbom-api-image.json "$DT_PROJECT_API_IMAGE"
+          upload sbom-frontend-image.json "$DT_PROJECT_FRONTEND_IMAGE"
