@@ -66,7 +66,7 @@ jobs:
           DD_URL: ${{ secrets.DEFECTDOJO_URL }}
           DD_TOKEN: ${{ secrets.DEFECTDOJO_TOKEN }}
           DD_PRODUCT: devsecops-workshop
-          DD_ENGAGEMENT: main-branch-sast
+          DD_ENGAGEMENT: security-scan
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
           BUILD_ID: ${{ github.run_id }}
