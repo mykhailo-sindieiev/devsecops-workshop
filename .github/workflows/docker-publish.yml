@@ -149,4 +149,3 @@ jobs:
         with:
           name: image-sbom
           path: trivy-*-image.json
-
